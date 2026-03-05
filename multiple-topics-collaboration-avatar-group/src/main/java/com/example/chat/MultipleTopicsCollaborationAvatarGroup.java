@@ -89,13 +89,30 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
         rebuildItems();
     }
 
+    /**
+     * Replaces all current topics with the given ones.
+     *
+     * @param topics the new topic ids to subscribe to
+     */
+    public void setTopics(String... topics) {
+        clearTopics();
+        for (String topic : topics) {
+            addTopic(topic);
+        }
+    }
+
+    /**
+     * Removes all topics and their participants from this AvatarGroup.
+     */
+    public void clearTopics() {
+        for (String topic : new ArrayList<>(topicRegistrations.keySet())) {
+            removeTopic(topic);
+        }
+    }
+
     @Override
     public void setTopic(String topicId) {
-        if (topicRegistrations != null) {
-            for (String topic : new ArrayList<>(topicRegistrations.keySet())) {
-                removeTopic(topic);
-            }
-        }
+        clearTopics();
         if (topicId != null) {
             addTopic(topicId);
         }
