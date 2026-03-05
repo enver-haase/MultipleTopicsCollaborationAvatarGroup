@@ -29,16 +29,18 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
     // Optional function mapping userId to image URL
     private Function<String, String> imageUrlProvider;
 
+    private boolean ownAvatarVisible = true;
+
     public MultipleTopicsCollaborationAvatarGroup(UserInfo userInfo) {
         super(userInfo, null);
-        setOwnAvatarVisible(false);
+        super.setOwnAvatarVisible(false);
         this.userInfo = userInfo;
     }
 
     public MultipleTopicsCollaborationAvatarGroup(UserInfo userInfo,
                                                    String... topicIds) {
         super(userInfo, null);
-        setOwnAvatarVisible(false);
+        super.setOwnAvatarVisible(false);
         this.userInfo = userInfo;
         for (String topic : topicIds) {
             addTopic(topic);
@@ -90,6 +92,17 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
         rebuildItems();
     }
 
+    @Override
+    public void setOwnAvatarVisible(boolean ownAvatarVisible) {
+        this.ownAvatarVisible = ownAvatarVisible;
+        rebuildItems();
+    }
+
+    @Override
+    public boolean isOwnAvatarVisible() {
+        return ownAvatarVisible;
+    }
+
     public void setImageUrlProvider(Function<String, String> imageUrlProvider) {
         this.imageUrlProvider = imageUrlProvider;
     }
@@ -100,6 +113,8 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
         topicParticipants.values().forEach(union::putAll);
 
         var items = union.entrySet().stream()
+                .filter(entry -> ownAvatarVisible
+                        || !entry.getKey().equals(userInfo.getId()))
                 .map(entry -> {
                     AvatarGroup.AvatarGroupItem item = new AvatarGroup.AvatarGroupItem();
                     item.setName(entry.getValue());
