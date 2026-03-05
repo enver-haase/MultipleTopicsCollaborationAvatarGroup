@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 
-const APP_URL = 'http://localhost:8080/';
+const APP_URL = process.env.APP_URL || 'http://localhost:8080/';
 const USERS = [
   { username: 'alice',   password: 'alice' },
   { username: 'bob',     password: 'bob' },
@@ -62,7 +62,8 @@ async function logout(page, username) {
 }
 
 async function run() {
-  const browser = await chromium.launch({ headless: false, slowMo: 200 });
+  const headless = process.env.CI === 'true' || process.env.HEADLESS === 'true';
+  const browser = await chromium.launch({ headless, slowMo: headless ? 0 : 200 });
 
   // Create 3 separate browser contexts (isolated sessions)
   const contexts = [];
