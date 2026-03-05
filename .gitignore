@@ -3,7 +3,8 @@ target/
 node_modules/
 *.class
 .claude/
-src/main/frontend/generated/
-src/main/bundles/
+**/src/main/frontend/generated/
+**/src/main/frontend/index.html
+**/src/main/bundles/
 test-results/
 package-lock.json
