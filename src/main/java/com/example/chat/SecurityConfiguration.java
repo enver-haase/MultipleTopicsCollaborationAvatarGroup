@@ -7,8 +7,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @EnableWebSecurity
@@ -16,26 +17,24 @@ import org.springframework.security.web.SecurityFilterChain;
 @Import(VaadinAwareSecurityContextHolderStrategyConfiguration.class)
 public class SecurityConfiguration {
 
-    private final OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler;
-
-    public SecurityConfiguration(ClientRegistrationRepository clientRegistrationRepository) {
-        this.oidcLogoutSuccessHandler =
-                new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
-        this.oidcLogoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}");
-    }
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth ->
                 auth.requestMatchers("/faces/**").permitAll());
 
         http.with(VaadinSecurityConfigurer.vaadin(), configurer -> {
-            configurer.oauth2LoginPage(
-                    "/oauth2/authorization/keycloak",
-                    "{baseUrl}");
-            configurer.logoutSuccessHandler(oidcLogoutSuccessHandler);
+            configurer.loginView(LoginView.class);
         });
 
         return http.build();
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return new InMemoryUserDetailsManager(
+                User.withUsername("alice").password("{noop}alice").roles("USER").build(),
+                User.withUsername("bob").password("{noop}bob").roles("USER").build(),
+                User.withUsername("charlie").password("{noop}charlie").roles("USER").build()
+        );
     }
 }

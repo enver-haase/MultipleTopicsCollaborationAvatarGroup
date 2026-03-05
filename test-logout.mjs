@@ -2,19 +2,19 @@ import { chromium } from 'playwright';
 
 const APP_URL = 'http://localhost:8080/';
 const USERS = [
-  { username: 'alice',  password: 'alice' },
-  { username: 'ehaase',   password: 'ehaase' },
-  { username: 'charlie',  password: 'charlie' },
+  { username: 'alice',   password: 'alice' },
+  { username: 'bob',     password: 'bob' },
+  { username: 'charlie', password: 'charlie' },
 ];
 
-// Keycloak login: fill the form and submit
-async function keycloakLogin(page, { username, password }) {
+// Vaadin LoginForm login: fill the form and submit
+async function loginUser(page, { username, password }) {
   await page.goto(APP_URL);
-  // Wait for Keycloak login form
-  await page.waitForSelector('#username', { timeout: 15000 });
-  await page.fill('#username', username);
-  await page.fill('#password', password);
-  await page.click('#kc-login');
+  // Wait for Vaadin login form
+  await page.waitForSelector('vaadin-login-form', { timeout: 15000 });
+  await page.fill('vaadin-login-form input[name="username"]', username);
+  await page.fill('vaadin-login-form input[name="password"]', password);
+  await page.locator('vaadin-login-form vaadin-button[slot="submit"]').click();
   // Wait for the Vaadin app to load (the RetroChat header)
   await page.waitForSelector('vaadin-horizontal-layout', { timeout: 30000 });
   console.log(`  [${username}] logged in`);
@@ -56,8 +56,8 @@ async function countAvatars(page, username) {
 async function logout(page, username) {
   const logoutBtn = page.locator('vaadin-button', { hasText: 'Logout' });
   await logoutBtn.click();
-  // Wait for redirect to Keycloak login page
-  await page.waitForSelector('#username', { timeout: 15000 });
+  // Wait for redirect to Vaadin login form
+  await page.waitForSelector('vaadin-login-form', { timeout: 15000 });
   console.log(`  [${username}] logged out (login screen shown)`);
 }
 
@@ -77,15 +77,15 @@ async function run() {
   // --- Step 1: Log in all three users ---
   console.log('\n=== Step 1: Logging in all three users ===');
   for (let i = 0; i < USERS.length; i++) {
-    await keycloakLogin(pages[i], USERS[i]);
+    await loginUser(pages[i], USERS[i]);
   }
 
   // --- Step 2: Each user types in a different panel ---
   console.log('\n=== Step 2: Each user types in a different panel ===');
   // alice types in panel 0 (PET2001-talk)
   await typeInPanel(pages[0], 0, 'Hello from alice!', USERS[0].username);
-  // ehaase types in panel 1 (VIC20-talk)
-  await typeInPanel(pages[1], 1, 'Hello from ehaase!', USERS[1].username);
+  // bob types in panel 1 (VIC20-talk)
+  await typeInPanel(pages[1], 1, 'Hello from bob!', USERS[1].username);
   // charlie types in panel 2 (C64-talk)
   await typeInPanel(pages[2], 2, 'Hello from charlie!', USERS[2].username);
 
@@ -112,14 +112,14 @@ async function run() {
   await countAvatars(pages[1], USERS[1].username);
   await countAvatars(pages[2], USERS[2].username);
 
-  // --- Step 6: Logout ehaase ---
-  console.log('\n=== Step 6: ehaase logs out ===');
+  // --- Step 6: Logout bob ---
+  console.log('\n=== Step 6: bob logs out ===');
   await logout(pages[1], USERS[1].username);
 
   await pages[2].waitForTimeout(8000);
 
   // --- Step 7: Check avatar counts - only charlie remains ---
-  console.log('\n=== Step 7: Avatar counts after ehaase logout ===');
+  console.log('\n=== Step 7: Avatar counts after bob logout ===');
   console.log('  Expected: global=1, panel0=0, panel1=0, panel2=1, panel3=0');
   await countAvatars(pages[2], USERS[2].username);
 

@@ -17,7 +17,7 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import jakarta.annotation.security.PermitAll;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -31,6 +31,12 @@ public class MainView extends VerticalLayout {
     private static final String[] TOPICS = {
             "PET2001-talk", "VIC20-talk", "C64-talk", "AMIGA-talk"
     };
+
+    private static final Map<String, String> DISPLAY_NAMES = Map.of(
+            "alice", "Alice Krzykalla",
+            "bob", "Bob Krzykalla",
+            "charlie", "Charlie Krzykalla"
+    );
 
     private final AuthenticationContext authContext;
     private final UserInfo userInfo;
@@ -46,9 +52,9 @@ public class MainView extends VerticalLayout {
         this.authContext = authContext;
         this.pictureService = pictureService;
 
-        OidcUser oidcUser = authContext.getAuthenticatedUser(OidcUser.class).orElseThrow();
-        String userId = oidcUser.getPreferredUsername();
-        String displayName = oidcUser.getFullName();
+        UserDetails userDetails = authContext.getAuthenticatedUser(UserDetails.class).orElseThrow();
+        String userId = userDetails.getUsername();
+        String displayName = DISPLAY_NAMES.getOrDefault(userId, userId);
         this.userInfo = new UserInfo(userId, displayName);
 
         // Global AvatarGroup subscribing to all four participant topics
@@ -64,7 +70,7 @@ public class MainView extends VerticalLayout {
         setPadding(true);
         setSpacing(false);
 
-        add(buildHeader(oidcUser.getPreferredUsername().toUpperCase()));
+        add(buildHeader(userId.toUpperCase()));
         add(buildChatGrid());
     }
 
