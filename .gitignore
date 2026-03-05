@@ -1,0 +1,9 @@
+retrochat-local.properties
+target/
+node_modules/
+*.class
+.claude/
+src/main/frontend/generated/
+src/main/bundles/
+test-results/
+package-lock.json
