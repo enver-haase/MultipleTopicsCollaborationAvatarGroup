@@ -8,3 +8,8 @@ node_modules/
 **/src/main/bundles/
 test-results/
 package-lock.json
+.playwright-profile/
+capture-icon.mjs
+pw-repl.mjs
+pw-step.mjs
+upload-directory.mjs
