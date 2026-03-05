@@ -47,8 +47,8 @@ public class MainView extends VerticalLayout {
         this.pictureService = pictureService;
 
         OidcUser oidcUser = authContext.getAuthenticatedUser(OidcUser.class).orElseThrow();
-        String userId = oidcUser.getSubject();
-        String displayName = oidcUser.getPreferredUsername();
+        String userId = oidcUser.getPreferredUsername();
+        String displayName = oidcUser.getFullName();
         this.userInfo = new UserInfo(userId, displayName);
 
         // Global AvatarGroup subscribing to all four participant topics
@@ -64,7 +64,7 @@ public class MainView extends VerticalLayout {
         setPadding(true);
         setSpacing(false);
 
-        add(buildHeader(displayName));
+        add(buildHeader(oidcUser.getPreferredUsername().toUpperCase()));
         add(buildChatGrid());
     }
 
@@ -288,9 +288,9 @@ public class MainView extends VerticalLayout {
                         .map(entry -> {
                             AvatarGroupItem item = new AvatarGroupItem();
                             item.setName(entry.getValue());
-                            String imageUrl = pictureService.getImageUrl(entry.getKey());
-                            if (imageUrl != null) {
-                                item.setImage(imageUrl);
+                            var dh = pictureService.getDownloadHandler(entry.getKey());
+                            if (dh != null) {
+                                item.setImageHandler(dh);
                             }
                             return item;
                         })

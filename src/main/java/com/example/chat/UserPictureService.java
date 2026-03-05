@@ -55,16 +55,4 @@ public class UserPictureService {
         );
     }
 
-    /**
-     * Returns the static URL for the face image assigned to the given user ID,
-     * or {@code null} if no image is available. Useful for components that
-     * accept a URL string (e.g. {@code AvatarGroupItem.setImage}).
-     */
-    public String getImageUrl(String userId) {
-        if ("charlie".equals(userId)) {
-            return null;
-        }
-        int index = Math.floorMod(userId.hashCode(), FACE_COUNT);
-        return "/faces/face" + (index + 1) + ".svg";
-    }
 }
