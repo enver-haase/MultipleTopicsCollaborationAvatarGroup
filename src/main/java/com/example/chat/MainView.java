@@ -53,7 +53,8 @@ public class MainView extends VerticalLayout {
 
         // Global AvatarGroup subscribing to all four participant topics
         globalAvatarGroup = new MultipleTopicsCollaborationAvatarGroup(userInfo);
-        globalAvatarGroup.setImageUrlProvider(pictureService::getImageUrl);
+        globalAvatarGroup.setImageHandler(
+                ui -> pictureService.getDownloadHandler(ui.getId()));
         globalAvatarGroup.setWidth("250px");
         for (String t : TOPICS) {
             globalAvatarGroup.addTopic(t + "-participants");

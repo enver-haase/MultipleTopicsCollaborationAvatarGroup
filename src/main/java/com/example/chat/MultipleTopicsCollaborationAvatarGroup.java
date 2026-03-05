@@ -7,9 +7,9 @@ import com.vaadin.collaborationengine.UserInfo;
 import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.shared.Registration;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * An AvatarGroup that shows the union of participants across multiple
@@ -25,9 +25,6 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
 
     // Per-topic connection registrations for cleanup
     private final Map<String, Registration> topicRegistrations = new LinkedHashMap<>();
-
-    // Optional function mapping userId to image URL
-    private Function<String, String> imageUrlProvider;
 
     private boolean ownAvatarVisible = true;
 
@@ -93,9 +90,23 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
     }
 
     @Override
+    public void setTopic(String topicId) {
+        if (topicRegistrations != null) {
+            for (String topic : new ArrayList<>(topicRegistrations.keySet())) {
+                removeTopic(topic);
+            }
+        }
+        if (topicId != null) {
+            addTopic(topicId);
+        }
+    }
+
+    @Override
     public void setOwnAvatarVisible(boolean ownAvatarVisible) {
         this.ownAvatarVisible = ownAvatarVisible;
-        rebuildItems();
+        if (topicParticipants != null) {
+            rebuildItems();
+        }
     }
 
     @Override
@@ -103,8 +114,18 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
         return ownAvatarVisible;
     }
 
-    public void setImageUrlProvider(Function<String, String> imageUrlProvider) {
-        this.imageUrlProvider = imageUrlProvider;
+    @SuppressWarnings("deprecation")
+    @Override
+    public void setImageProvider(ImageProvider imageProvider) {
+        throw new UnsupportedOperationException(
+                "setImageProvider is deprecated; use setImageHandler instead");
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public ImageProvider getImageProvider() {
+        throw new UnsupportedOperationException(
+                "getImageProvider is deprecated; use getImageHandler instead");
     }
 
     private void rebuildItems() {
@@ -112,16 +133,18 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
         Map<String, String> union = new LinkedHashMap<>();
         topicParticipants.values().forEach(union::putAll);
 
+        ImageHandler handler = getImageHandler();
         var items = union.entrySet().stream()
                 .filter(entry -> ownAvatarVisible
                         || !entry.getKey().equals(userInfo.getId()))
                 .map(entry -> {
                     AvatarGroup.AvatarGroupItem item = new AvatarGroup.AvatarGroupItem();
                     item.setName(entry.getValue());
-                    if (imageUrlProvider != null) {
-                        String imageUrl = imageUrlProvider.apply(entry.getKey());
-                        if (imageUrl != null) {
-                            item.setImage(imageUrl);
+                    if (handler != null) {
+                        var dh = handler.getDownloadHandler(
+                                new UserInfo(entry.getKey(), entry.getValue()));
+                        if (dh != null) {
+                            item.setImageHandler(dh);
                         }
                     }
                     return item;
