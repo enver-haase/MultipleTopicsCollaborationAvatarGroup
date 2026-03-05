@@ -1,4 +1,4 @@
-package com.example.chat;
+package org.vaadin.addons.infraleap;
 
 import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategyConfiguration;
 import com.vaadin.flow.spring.security.VaadinSecurityConfigurer;

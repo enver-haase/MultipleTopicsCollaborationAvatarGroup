@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.vaadin.addons.infraleap</groupId>
         <artifactId>multiple-topics-collaboration-avatar-group-parent</artifactId>
-        <version>1.0.2</version>
+        <version>1.0.3</version>
     </parent>
 
     <artifactId>multiple-topics-collaboration-avatar-group</artifactId>

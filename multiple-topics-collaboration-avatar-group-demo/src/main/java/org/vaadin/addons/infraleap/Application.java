@@ -1,4 +1,4 @@
-package com.example.chat;
+package org.vaadin.addons.infraleap;
 
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.page.AppShellConfigurator;

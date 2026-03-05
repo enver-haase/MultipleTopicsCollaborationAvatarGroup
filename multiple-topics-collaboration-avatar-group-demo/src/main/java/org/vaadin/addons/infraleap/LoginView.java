@@ -1,4 +1,4 @@
-package com.example.chat;
+package org.vaadin.addons.infraleap;
 
 import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;

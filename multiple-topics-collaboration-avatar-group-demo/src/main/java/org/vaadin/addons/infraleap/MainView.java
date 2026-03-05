@@ -1,4 +1,4 @@
-package com.example.chat;
+package org.vaadin.addons.infraleap;
 
 import com.vaadin.collaborationengine.CollaborationEngine;
 import com.vaadin.collaborationengine.CollaborationMap;
