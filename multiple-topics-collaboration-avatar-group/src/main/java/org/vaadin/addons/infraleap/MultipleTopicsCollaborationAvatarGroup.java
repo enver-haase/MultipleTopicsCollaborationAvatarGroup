@@ -105,6 +105,9 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
      * Removes all topics and their participants from this AvatarGroup.
      */
     public void clearTopics() {
+        if (topicRegistrations == null) {
+            return;
+        }
         for (String topic : new ArrayList<>(topicRegistrations.keySet())) {
             removeTopic(topic);
         }
