@@ -13,7 +13,7 @@
 
     <groupId>com.example</groupId>
     <artifactId>multiple-topics-collaboration-avatar-group-demo</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>Multiple Topics Collaboration Avatar Group Demo</name>
 
     <properties>

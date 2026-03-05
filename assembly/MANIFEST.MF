@@ -1,4 +1,4 @@
 Vaadin-Package-Version: 1
 Implementation-Title: Multiple Topics Collaboration Avatar Group
-Implementation-Version: 1.0-SNAPSHOT
-Vaadin-Addon: multiple-topics-collaboration-avatar-group-1.0-SNAPSHOT.jar
+Implementation-Version: 1.0.0
+Vaadin-Addon: multiple-topics-collaboration-avatar-group-1.0.0.jar
