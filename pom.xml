@@ -6,7 +6,7 @@
 
     <groupId>org.vaadin.addons.infraleap</groupId>
     <artifactId>multiple-topics-collaboration-avatar-group-parent</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
+    <version>1.0.5</version>
     <packaging>pom</packaging>
     <name>MultipleTopicsCollaborationAvatarGroup</name>
 
