@@ -1,6 +1,6 @@
 Vaadin-Package-Version: 1
 Implementation-Title: Multiple Topics Collaboration Avatar Group
-Implementation-Version: 1.0.2
+Implementation-Version: ${project.version}
 Implementation-Vendor: Enver Haase-Beer
 Vaadin-License-Title: Apache License 2.0
-Vaadin-Addon: multiple-topics-collaboration-avatar-group-1.0.2.jar
+Vaadin-Addon: ${project.artifactId}-${project.version}.jar
