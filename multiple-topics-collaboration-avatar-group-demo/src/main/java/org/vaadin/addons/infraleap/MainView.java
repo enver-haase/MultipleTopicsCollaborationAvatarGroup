@@ -1,12 +1,11 @@
 package org.vaadin.addons.infraleap;
 
+import com.vaadin.collaborationengine.CollaborationAvatarGroup;
 import com.vaadin.collaborationengine.CollaborationEngine;
 import com.vaadin.collaborationengine.CollaborationMap;
 import com.vaadin.collaborationengine.CollaborationMessageList;
 import com.vaadin.collaborationengine.MessageManager;
 import com.vaadin.collaborationengine.UserInfo;
-import com.vaadin.flow.component.avatar.AvatarGroup;
-import com.vaadin.flow.component.avatar.AvatarGroup.AvatarGroupItem;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
@@ -20,6 +19,7 @@ import jakarta.annotation.security.PermitAll;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,9 +62,8 @@ public class MainView extends VerticalLayout {
         globalAvatarGroup.setImageHandler(
                 ui -> pictureService.getDownloadHandler(ui.getId()));
         globalAvatarGroup.setWidth("250px");
-        for (String t : TOPICS) {
-            globalAvatarGroup.addTopic(t + "-participants");
-        }
+        globalAvatarGroup.setTopics(
+                Arrays.stream(TOPICS).map(t -> t + "-participants").toArray(String[]::new));
 
         setSizeFull();
         setPadding(true);
@@ -127,38 +126,13 @@ public class MainView extends VerticalLayout {
     }
 
     private VerticalLayout buildChatPanel(String topic) {
-        // --- AvatarGroup for this topic's participants ---
-        AvatarGroup avatarGroup = new AvatarGroup();
-
-        // Local mirror of the CollaborationMap (no iteration API on CollaborationMap)
-        Map<String, String> participantsMirror = new LinkedHashMap<>();
-
-        // Stored reference to the participants map (populated once on connection)
-        final CollaborationMap[] participantsMapRef = {null};
-
         String participantsTopic = topic + "-participants";
-        CollaborationEngine.getInstance().openTopicConnection(
-                this, participantsTopic, userInfo, topicConnection -> {
-                    CollaborationMap participantsMap =
-                            topicConnection.getNamedMap("participants");
-                    participantsMapRef[0] = participantsMap;
 
-                    participantsMap.subscribe(event -> {
-                        String value = event.getValue(String.class);
-                        if (value != null) {
-                            participantsMirror.put(event.getKey(), value);
-                        } else {
-                            participantsMirror.remove(event.getKey());
-                        }
-                        rebuildAvatarGroup(avatarGroup, participantsMirror);
-                    });
-
-                    // Register cleanup for explicit logout
-                    cleanupActions.add(() -> participantsMap.put(userInfo.getId(), null));
-
-                    // Cleanup on deactivation (tab close / session end)
-                    return () -> participantsMap.put(userInfo.getId(), null);
-                });
+        // --- AvatarGroup for this topic's participants ---
+        CollaborationAvatarGroup avatarGroup =
+                new CollaborationAvatarGroup(userInfo, participantsTopic);
+        avatarGroup.setImageHandler(
+                ui -> pictureService.getDownloadHandler(ui.getId()));
 
         // --- Title ---
         Span title = new Span(topic);
@@ -228,17 +202,9 @@ public class MainView extends VerticalLayout {
         inputField.setWidthFull();
         inputField.setValueChangeMode(ValueChangeMode.EAGER);
 
-        boolean[] participantRegistered = {false};
-
-        // Broadcast every keystroke using stored map references (no new connections)
+        // Broadcast every keystroke using stored map reference
         inputField.addValueChangeListener(e -> {
             String text = e.getValue();
-            // Register as participant on first keystroke
-            if (!participantRegistered[0] && participantsMapRef[0] != null
-                    && text != null && !text.isEmpty()) {
-                participantsMapRef[0].put(userInfo.getId(), userInfo.getName());
-                participantRegistered[0] = true;
-            }
             if (typingMapRef[0] != null) {
                 typingMapRef[0].put(userInfo.getId(),
                         text == null ? "" : text);
@@ -272,7 +238,39 @@ public class MainView extends VerticalLayout {
                 .set("border-radius", "var(--lumo-border-radius-m)");
         panel.expand(messageList);
 
-        return panel;
+        // --- Enable/Disable toggle (outside the panel so opacity doesn't affect it) ---
+        Button toggleButton = new Button("Disable");
+        toggleButton.addClickListener(e -> {
+            boolean enabling = toggleButton.getText().equals("Enable");
+            if (enabling) {
+                avatarGroup.setTopic(participantsTopic);
+                globalAvatarGroup.addTopic(participantsTopic);
+                inputField.setEnabled(true);
+                sendButton.setEnabled(true);
+                panel.getStyle().remove("opacity");
+                toggleButton.setText("Disable");
+            } else {
+                avatarGroup.setTopic(null);
+                globalAvatarGroup.removeTopic(participantsTopic);
+                if (typingMapRef[0] != null) {
+                    typingMapRef[0].put(userInfo.getId(), null);
+                }
+                inputField.clear();
+                inputField.setEnabled(false);
+                sendButton.setEnabled(false);
+                panel.getStyle().set("opacity", "0.4");
+                toggleButton.setText("Enable");
+            }
+        });
+
+        VerticalLayout wrapper = new VerticalLayout(panel, toggleButton);
+        wrapper.setSizeFull();
+        wrapper.setSpacing(false);
+        wrapper.setPadding(false);
+        wrapper.expand(panel);
+        wrapper.setHorizontalComponentAlignment(Alignment.END, toggleButton);
+
+        return wrapper;
     }
 
     private void rebuildTypingArea(VerticalLayout typingArea,
@@ -285,21 +283,5 @@ public class MainView extends VerticalLayout {
             typingLabels.put(userId, label);
             typingArea.add(label);
         });
-    }
-
-    private void rebuildAvatarGroup(AvatarGroup avatarGroup,
-                                    Map<String, String> participants) {
-        avatarGroup.setItems(
-                participants.entrySet().stream()
-                        .map(entry -> {
-                            AvatarGroupItem item = new AvatarGroupItem();
-                            item.setName(entry.getValue());
-                            var dh = pictureService.getDownloadHandler(entry.getKey());
-                            if (dh != null) {
-                                item.setImageHandler(dh);
-                            }
-                            return item;
-                        })
-                        .toList());
     }
 }

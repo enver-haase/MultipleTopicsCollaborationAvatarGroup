@@ -1,35 +1,36 @@
 package org.vaadin.addons.infraleap;
 
 import com.vaadin.collaborationengine.CollaborationAvatarGroup;
-import com.vaadin.collaborationengine.CollaborationEngine;
-import com.vaadin.collaborationengine.CollaborationMap;
+import com.vaadin.collaborationengine.PresenceManager;
 import com.vaadin.collaborationengine.UserInfo;
 import com.vaadin.flow.component.avatar.AvatarGroup;
-import com.vaadin.flow.shared.Registration;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * An AvatarGroup that shows the union of participants across multiple
- * Collaboration Engine topics. A user appears once they have been registered
- * as a participant in any of the added topics.
+ * An AvatarGroup that shows the union of present users across multiple
+ * Collaboration Engine topics. Uses the same {@link PresenceManager} mechanism
+ * as {@link CollaborationAvatarGroup}, so presence is compatible between them.
  */
 public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarGroup {
 
     private final UserInfo userInfo;
 
-    // Per-topic participant maps (topic -> (userId -> displayName))
-    private final Map<String, Map<String, String>> topicParticipants = new LinkedHashMap<>();
+    // Per-topic set of present users (topic -> (userId -> UserInfo))
+    private final Map<String, Map<String, UserInfo>> topicParticipants = new LinkedHashMap<>();
 
-    // Per-topic connection registrations for cleanup
-    private final Map<String, Registration> topicRegistrations = new LinkedHashMap<>();
+    // Per-topic PresenceManagers for cleanup
+    private final Map<String, PresenceManager> topicManagers = new LinkedHashMap<>();
 
     private boolean ownAvatarVisible = true;
 
     public MultipleTopicsCollaborationAvatarGroup(UserInfo userInfo) {
         super(userInfo, null);
+        // Disable the superclass's own avatar handling — we manage all avatars
+        // ourselves in rebuildItems(), which respects our own ownAvatarVisible field.
         super.setOwnAvatarVisible(false);
         this.userInfo = userInfo;
     }
@@ -37,7 +38,7 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
     public MultipleTopicsCollaborationAvatarGroup(UserInfo userInfo,
                                                    String... topicIds) {
         super(userInfo, null);
-        super.setOwnAvatarVisible(false);
+        super.setOwnAvatarVisible(false); // see comment in no-args constructor
         this.userInfo = userInfo;
         for (String topic : topicIds) {
             addTopic(topic);
@@ -45,46 +46,47 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
     }
 
     /**
-     * Subscribes to a participant topic. Any user registered in that topic's
-     * {@code "participants"} CollaborationMap will appear in this AvatarGroup.
+     * Subscribes to a topic using {@link PresenceManager}. The current user is
+     * automatically marked as present, and all present users on this topic
+     * appear in the AvatarGroup. Adding a topic that is already subscribed
+     * is a no-op.
      *
-     * @param topic the participant topic id (e.g. "PET2001-talk-participants")
+     * @param topic the topic id
      */
     public void addTopic(String topic) {
-        Map<String, String> participants = new LinkedHashMap<>();
+        if (topicManagers.containsKey(topic)) {
+            return;
+        }
+        Map<String, UserInfo> participants = new LinkedHashMap<>();
         topicParticipants.put(topic, participants);
 
-        Registration registration = CollaborationEngine.getInstance().openTopicConnection(
-                this, topic, userInfo, topicConnection -> {
-                    CollaborationMap participantsMap =
-                            topicConnection.getNamedMap("participants");
-
-                    participantsMap.subscribe(event -> {
-                        String value = event.getValue(String.class);
-                        if (value != null) {
-                            participants.put(event.getKey(), value);
-                        } else {
-                            participants.remove(event.getKey());
-                        }
-                        rebuildItems();
-                    });
-
-                    return null;
-                });
-        topicRegistrations.put(topic, registration);
+        PresenceManager manager = new PresenceManager(this, userInfo, topic);
+        manager.markAsPresent(true);
+        manager.setPresenceHandler(context -> {
+            UserInfo user = context.getUser();
+            participants.put(user.getId(), user);
+            rebuildItems();
+            return () -> {
+                participants.remove(user.getId());
+                rebuildItems();
+            };
+        });
+        topicManagers.put(topic, manager);
     }
 
     /**
-     * Unsubscribes from a participant topic and removes its participants
-     * from this AvatarGroup.
+     * Unsubscribes from a topic and removes its participants from this AvatarGroup.
      *
-     * @param topic the participant topic id to remove
+     * @param topic the topic id to remove
+     * @throws IllegalArgumentException if the topic was not previously added
      */
     public void removeTopic(String topic) {
-        Registration registration = topicRegistrations.remove(topic);
-        if (registration != null) {
-            registration.remove();
+        PresenceManager manager = topicManagers.remove(topic);
+        if (manager == null) {
+            throw new IllegalArgumentException(
+                    "Topic not subscribed: " + topic);
         }
+        manager.close();
         topicParticipants.remove(topic);
         rebuildItems();
     }
@@ -105,10 +107,10 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
      * Removes all topics and their participants from this AvatarGroup.
      */
     public void clearTopics() {
-        if (topicRegistrations == null) {
+        if (topicManagers == null) {
             return;
         }
-        for (String topic : new ArrayList<>(topicRegistrations.keySet())) {
+        for (String topic : new ArrayList<>(topicManagers.keySet())) {
             removeTopic(topic);
         }
     }
@@ -149,8 +151,8 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
     }
 
     private void rebuildItems() {
-        // Union of participants across all remaining topics
-        Map<String, String> union = new LinkedHashMap<>();
+        // Union of present users across all topics
+        Map<String, UserInfo> union = new LinkedHashMap<>();
         topicParticipants.values().forEach(union::putAll);
 
         ImageHandler handler = getImageHandler();
@@ -158,11 +160,11 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
                 .filter(entry -> ownAvatarVisible
                         || !entry.getKey().equals(userInfo.getId()))
                 .map(entry -> {
+                    UserInfo user = entry.getValue();
                     AvatarGroup.AvatarGroupItem item = new AvatarGroup.AvatarGroupItem();
-                    item.setName(entry.getValue());
+                    item.setName(user.getName());
                     if (handler != null) {
-                        var dh = handler.getDownloadHandler(
-                                new UserInfo(entry.getKey(), entry.getValue()));
+                        var dh = handler.getDownloadHandler(user);
                         if (dh != null) {
                             item.setImageHandler(dh);
                         }

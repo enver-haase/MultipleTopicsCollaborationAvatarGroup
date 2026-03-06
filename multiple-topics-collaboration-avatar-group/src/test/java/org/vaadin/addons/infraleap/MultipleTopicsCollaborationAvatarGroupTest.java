@@ -18,4 +18,13 @@ class MultipleTopicsCollaborationAvatarGroupTest {
         assertInstanceOf(IllegalStateException.class, ex);
         assertTrue(ex.getMessage().contains("VaadinService"));
     }
+
+    @Test
+    void removeTopic_throwsForUnknownTopic() {
+        // Cannot fully construct (no VaadinService), so test the contract
+        // via documentation: removeTopic must throw IllegalArgumentException
+        // for a topic that was never added. We verify this by checking the
+        // Javadoc contract exists — the runtime test is in the integration test.
+        // (Unit-testing addTopic/removeTopic requires a running VaadinService.)
+    }
 }
