@@ -13,3 +13,5 @@ capture-icon.mjs
 pw-repl.mjs
 pw-step.mjs
 upload-directory.mjs
+tsconfig.json
+types.d.ts

@@ -17,7 +17,7 @@
     </fileSets>
     <files>
         <file>
-            <source>../assembly/MANIFEST.MF</source>
+            <source>assembly/MANIFEST.MF</source>
             <outputDirectory>META-INF</outputDirectory>
             <filtered>true</filtered>
         </file>

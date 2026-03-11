@@ -5,10 +5,31 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.vaadin.addons.infraleap</groupId>
-    <artifactId>multiple-topics-collaboration-avatar-group-parent</artifactId>
-    <version>1.0.6-SNAPSHOT</version>
-    <packaging>pom</packaging>
-    <name>MultipleTopicsCollaborationAvatarGroup</name>
+    <artifactId>multiple-topics-collaboration-avatar-group</artifactId>
+    <version>1.0.6</version>
+    <packaging>jar</packaging>
+    <name>Multiple Topics Collaboration Avatar Group</name>
+    <description>An AvatarGroup that shows the union of participants across multiple Collaboration Engine topics</description>
+    <url>https://github.com/enver-haase/MultipleTopicsCollaborationAvatarGroup</url>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Enver Haase-Beer</name>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/enver-haase/MultipleTopicsCollaborationAvatarGroup.git</connection>
+        <developerConnection>scm:git:ssh://github.com:enver-haase/MultipleTopicsCollaborationAvatarGroup.git</developerConnection>
+        <url>https://github.com/enver-haase/MultipleTopicsCollaborationAvatarGroup</url>
+    </scm>
 
     <properties>
         <java.version>21</java.version>
@@ -16,12 +37,8 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <headless>true</headless>
     </properties>
-
-    <modules>
-        <module>multiple-topics-collaboration-avatar-group</module>
-        <module>multiple-topics-collaboration-avatar-group-demo</module>
-    </modules>
 
     <dependencyManagement>
         <dependencies>
@@ -32,6 +49,196 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>4.0.3</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin-spring-boot-starter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.vaadin</groupId>
+            <artifactId>vaadin-dev</artifactId>
+            <optional>true</optional>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Vaadin-Package-Version>1</Vaadin-Package-Version>
+                            <Implementation-Title>Multiple Topics Collaboration Avatar Group</Implementation-Title>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                            <Implementation-Vendor>Enver Haase-Beer</Implementation-Vendor>
+                            <Vaadin-License-Title>Apache License 2.0</Vaadin-License-Title>
+                            <Vaadin-Addon>${project.artifactId}-${project.version}.jar</Vaadin-Addon>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.11.2</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>4.0.3</version>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>directory</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <version>3.7.1</version>
+                        <configuration>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>assembly/assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <phase>install</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>it</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.vaadin</groupId>
+                        <artifactId>vaadin-maven-plugin</artifactId>
+                        <version>${vaadin.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>prepare-frontend</goal>
+                                    <goal>build-frontend</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <version>4.0.3</version>
+                        <executions>
+                            <execution>
+                                <id>pre-it-start</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>test-start</goal>
+                                </goals>
+                                <configuration>
+                                    <wait>60000</wait>
+                                    <jmxPort>9099</jmxPort>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>post-it-stop</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>test-stop</goal>
+                                </goals>
+                                <configuration>
+                                    <jmxPort>9099</jmxPort>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <execution>
+                                <id>playwright-it</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>node</executable>
+                                    <arguments>
+                                        <argument>${project.basedir}/src/test/it/test-logout.mjs</argument>
+                                    </arguments>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                    <environmentVariables>
+                                        <HEADLESS>${headless}</HEADLESS>
+                                    </environmentVariables>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
