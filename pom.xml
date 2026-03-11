@@ -6,7 +6,7 @@
 
     <groupId>org.vaadin.addons.infraleap</groupId>
     <artifactId>multiple-topics-collaboration-avatar-group</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Multiple Topics Collaboration Avatar Group</name>
     <description>An AvatarGroup that shows the union of participants across multiple Collaboration Engine topics</description>
