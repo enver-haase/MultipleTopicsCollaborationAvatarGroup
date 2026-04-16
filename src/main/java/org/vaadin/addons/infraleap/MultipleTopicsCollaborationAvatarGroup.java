@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * An AvatarGroup that shows the union of present users across multiple
@@ -26,6 +27,19 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
     private final Map<String, PresenceManager> topicManagers = new LinkedHashMap<>();
 
     private boolean ownAvatarVisible = true;
+
+    private Consumer<String> topicEmptyHandler;
+
+    /**
+     * Sets a callback that is invoked when the last user leaves a topic (i.e. the
+     * topic's participant set transitions to empty). Intended for resource cleanup,
+     * e.g. releasing collaboration signals that are no longer needed.
+     *
+     * @param handler called with the topic id when it becomes empty; may be null to clear
+     */
+    public void setTopicEmptyHandler(Consumer<String> handler) {
+        this.topicEmptyHandler = handler;
+    }
 
     public MultipleTopicsCollaborationAvatarGroup(UserInfo userInfo) {
         super(userInfo, null);
@@ -69,6 +83,9 @@ public class MultipleTopicsCollaborationAvatarGroup extends CollaborationAvatarG
             return () -> {
                 participants.remove(user.getId());
                 rebuildItems();
+                if (participants.isEmpty() && topicEmptyHandler != null) {
+                    topicEmptyHandler.accept(topic);
+                }
             };
         });
         topicManagers.put(topic, manager);
